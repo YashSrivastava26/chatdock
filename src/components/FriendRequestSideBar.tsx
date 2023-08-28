@@ -23,14 +23,28 @@ const FriendRequestSideBar: FC<FriendRequestSideBarProps> = ({
     pusherClient.subscribe(
       toPusherKey(`user:${sessionId}:incoming_friend_request`)
     );
+
+    pusherClient.subscribe(toPusherKey(`user:${sessionId}:friends`));
+    pusherClient.subscribe(toPusherKey(`user:${sessionId}:reject`));
     const friendRequestHandler = () => {
       setUnseenRequestCount((prev) => prev + 1);
     };
 
+    const decrementCountHandler = () => {
+      setUnseenRequestCount((prev) => prev - 1);
+    };
+
     pusherClient.bind("incoming_friend_request", friendRequestHandler);
+    pusherClient.bind("new_friend", decrementCountHandler);
+    pusherClient.bind("reject_friend", decrementCountHandler);
 
     return () => {
+      pusherClient.unbind("new_friend", decrementCountHandler);
+      pusherClient.unbind("reject_friend", decrementCountHandler);
       pusherClient.unbind("incoming_friend_request", friendRequestHandler);
+
+      pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:friends`));
+      pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:reject`));
       pusherClient.unsubscribe(
         toPusherKey(`user:${sessionId}:incoming_friend_request`)
       );
